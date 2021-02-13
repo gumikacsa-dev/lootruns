@@ -1,0 +1,12 @@
+[
+  {
+    "modid": "lootruns",
+    "name": "Lootruns",
+    "description": "A drop-in replacement mod that reads and renders Wynntils (or compatible) lootruns",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "authorList": [
+      "Gumikacsa"
+    ]
+  }
+]
