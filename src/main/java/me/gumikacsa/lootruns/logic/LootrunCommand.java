@@ -51,6 +51,11 @@ public class LootrunCommand extends CommandBase implements IClientCommand {
     }
 
     @Override
+    public int getRequiredPermissionLevel() {
+        return 0;
+    }
+
+    @Override
     public boolean allowUsageWithoutPrefix(ICommandSender sender, String message) {
         return false;
     }
