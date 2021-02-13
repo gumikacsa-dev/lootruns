@@ -47,7 +47,7 @@ public class Lootruns {
     }
 
     @Mod.EventHandler
-    public void postinit(@Nonnull FMLPostInitializationEvent event) {}
+    public void postinit(@Nonnull FMLPostInitializationEvent event) { }
 
     public @Nonnull LootrunManager getManager() {
         return manager;

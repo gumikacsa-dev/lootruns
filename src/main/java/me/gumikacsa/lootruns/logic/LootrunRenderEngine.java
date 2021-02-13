@@ -34,6 +34,9 @@ public class LootrunRenderEngine {
         this.mod = mod;
         this.manager = manager;
         this.minecraft = Minecraft.getMinecraft();
+        if (System.getProperty("force-gamma") != null) {
+            minecraft.gameSettings.gammaSetting = 10.0f; // forces brightness to 1000%
+        }
     }
 
     @SubscribeEvent
@@ -42,6 +45,7 @@ public class LootrunRenderEngine {
         EntityPlayer player = minecraft.player;
         RenderManager renderManager = minecraft.getRenderManager();
         Lootrun loaded;
+        Collection<Chunk> checked = new HashSet<>();
         Collection<BlockPos> chests = new HashSet<>();
         if ((loaded = manager.loaded()) != null) {
             GlStateManager.pushMatrix();
@@ -52,26 +56,34 @@ public class LootrunRenderEngine {
             int offset = 0;
             long time = Sys.getTime();
             for (Point point: loaded.points) {
-                if (last != null && player.getDistance(point.x, point.y, point.z) < 256) {
-                    if (last.toVector().distanceTo(point.toVector()) > 10) continue;
-                    int rainbow = Math.abs(Color.HSBtoRGB((time + offset * 50) % 2500L / 2500.0F, 0.8F, 0.8F));
-                    float red = (rainbow >> 16 & 255) / 255.0F;
-                    float green = (rainbow >> 8 & 255) / 255.0F;
-                    float blue = (rainbow & 255) / 255.0F;
-                    GlStateManager.color(red, green, blue);
-                    GlStateManager.glBegin(GL11.GL_LINES);
-                    GlStateManager.glVertex3f(last.x, last.y, last.z);
-                    GlStateManager.glVertex3f(point.x, point.y, point.z);
-                    GlStateManager.glEnd();
-                    offset ++;
+                if (last != null) {
+                    boolean far = Math.abs(last.x - point.x) > 500 || Math.abs(last.y - point.y) > 500 || Math.abs(last.z - point.z) > 500;
+                    if (!far && player.getDistance(point.x, point.y, point.z) < 256) {
+                        int rainbow = Math.abs(Color.HSBtoRGB((time + offset * 50) % 2500L / 2500.0F, 0.8F, 0.8F));
+                        float red = (rainbow >> 16 & 255) / 255.0F;
+                        float green = (rainbow >> 8 & 255) / 255.0F;
+                        float blue = (rainbow & 255) / 255.0F;
+                        GlStateManager.color(red, green, blue);
+                        GlStateManager.glBegin(GL11.GL_LINES);
+                        GlStateManager.glVertex3f(last.x, last.y, last.z);
+                        GlStateManager.glVertex3f(point.x, point.y, point.z);
+                        GlStateManager.glEnd();
+                        offset++;
+                    }
                 }
                 last = point;
-                Chunk chunk = world.getChunk(point.toBlockPosition());
-                for (Map.Entry<BlockPos, TileEntity> entry: chunk.getTileEntityMap().entrySet()) {
-                    BlockPos position = entry.getKey();
-                    TileEntity entity = entry.getValue();
-                    if (entity instanceof TileEntityChest) {
-                        chests.add(position);
+                Chunk core = world.getChunk(point.toBlockPosition());
+                for (int x = -1; x <= 1; x ++) {
+                    for (int z = -1; z <= 1; z ++) {
+                        Chunk chunk = world.getChunk(core.x + x, core.z + z);
+                        if (!checked.add(chunk)) continue;
+                        for (Map.Entry<BlockPos, TileEntity> entry: chunk.getTileEntityMap().entrySet()) {
+                            BlockPos position = entry.getKey();
+                            TileEntity entity = entry.getValue();
+                            if (entity instanceof TileEntityChest) {
+                                chests.add(position);
+                            }
+                        }
                     }
                 }
             }
